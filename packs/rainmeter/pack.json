@@ -1,0 +1,42 @@
+{
+  "spec": 1,
+  "id": "rainmeter",
+  "name": "Rainmeter",
+  "version": "1.3.0",
+  "order": 30,
+  "targets": { "process": ["Rainmeter.exe"] },
+  "settings": [
+    {
+      "key": "layout",
+      "label": "Layout while a tracked app runs",
+      "type": "enum",
+      "values": ["Empty", "Default", "illustro default", "kill"],
+      "default": "Empty"
+    }
+  ],
+  "capture": [
+    { "key": "was_running", "mechanism": "process_running" },
+    { "key": "target_path", "mechanism": "target_path" }
+  ],
+  "apply": {
+    "guard": { "targetRunning": true },
+    "steps": [
+      { "mechanism": "rainmeter_bang", "bang": "!LoadLayout \"{{settings.layout}}\"",
+        "when": { "source": "setting", "not_equals": "kill" } },
+      { "mechanism": "process_kill", "exe": "{{captured.target_path}}",
+        "when": { "source": "setting", "equals": "kill" } }
+    ]
+  },
+  "revert": {
+    "guard": { "targetRunning": false, "capturedRunning": true },
+    "steps": [
+      { "mechanism": "process_start", "exe": "{{captured.target_path}}",
+        "when": { "source": "setting", "equals": "kill" } },
+      { "mechanism": "rainmeter_bang", "bang": "!LoadLayout \"@Backup\"",
+        "when": { "source": "setting", "not_equals": "kill" } },
+      { "mechanism": "rainmeter_bang", "bang": "!LoadLayout \"@Backup\"",
+        "sleep_ms": 3000,
+        "when": { "source": "setting", "equals": "kill" } }
+    ]
+  }
+}

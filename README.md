@@ -50,6 +50,7 @@ The hashes are computed over the exact committed bytes of each pack file.
 | Date | Change |
 |---|---|
 | 2026-10-18 | Initial catalog: `wallpaper-engine` 1.4.0, `g-helper` 1.3.1, `rainmeter` 1.3.0. |
+| 2026-10-18 | The daemon's catalog client landed: `--catalog-list` and `--catalog-install <id>` fetch this manifest, verify each file's sha256/size and install it (verified live against this repo). No pack content changed. |
 
 ## License
 

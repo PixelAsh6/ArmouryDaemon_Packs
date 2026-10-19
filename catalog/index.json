@@ -25,12 +25,12 @@
     {
       "id": "rainmeter",
       "name": "Rainmeter",
-      "version": "1.3.0",
-      "description": "Swaps Rainmeter to an empty layout while a tracked app runs and reloads the @Backup snapshot afterwards. The empty layout is picked automatically.",
+      "version": "1.4.0",
+      "description": "Swaps Rainmeter to the dropdown's layout while a tracked app runs and reloads the @Backup snapshot afterwards, with the pack sending the layout command to Rainmeter itself.",
       "file": "packs/rainmeter/pack.json",
-      "sha256": "b747423cd09bf529314c2d0f360dec5350a54285df82d1aa86b05a5d7664b05d",
-      "size": 1445,
-      "updated": "2026-10-18"
+      "sha256": "6477d976f9ff95fcbb939cf73845de32e4ab38c12edf89f25163e92c4f668b60",
+      "size": 1317,
+      "updated": "2026-10-20"
     }
   ]
 }

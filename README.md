@@ -12,11 +12,19 @@ ones it downloads, and interprets it — a pack never runs anything by itself.
 
 ## What is in here
 
-```
+```text
 catalog/index.json          the manifest the daemon reads
 packs/<id>/pack.json        the packs themselves (one JSON file each)
 LICENSE                     MIT
 ```
+
+## The packs in this repo
+
+| Pack | Version | What it does |
+|---|---|---|
+| `wallpaper-engine` | 1.4.0 | Stops, pauses or kills the animated wallpaper while a tracked app runs, and plays it again afterwards. Two dropdowns: the action, and which binary to call (auto, 64-bit, 32-bit). |
+| `g-helper` | 1.3.1 | Switches G-Helper's performance mode (Turbo / Balanced / Silent) through G-Helper's own hotkeys while a tracked app runs, and restores the captured mode afterwards. |
+| `rainmeter` | 1.5.0 | Loads another Rainmeter layout while a tracked app runs and reloads the `@Backup` snapshot afterwards. A spec 2 pack: the bang and the window class are pack data, and the pack sends them itself. |
 
 ## Installing a pack
 
@@ -27,7 +35,7 @@ folder.
 
 From the command line:
 
-```
+```console
 ArmouryDaemon.exe --catalog-list
 ArmouryDaemon.exe --catalog-install rainmeter
 ```
@@ -46,7 +54,8 @@ in the daemon repository), and a pack that does not validate is refused at insta
   "spec": 2,                       // 1 = data only, 2 = data + a script
   "id": "rainmeter",               // unique, non-empty
   "name": "Rainmeter",             // shown in the UI
-  "version": "1.4.0",              // shown in the UI, compared against the catalogue
+  "version": "1.5.0",              // shown in the UI, compared against the catalogue
+  "min_engine": "1.0.0",           // the daemon this pack needs (optional)
   "order": 30,                     // packs apply ascending, revert descending (default 100)
   "targets": { "process": ["Rainmeter.exe"] },   // exe file names, matched case-insensitively
   "settings": [                    // at most 4 dropdowns
@@ -162,7 +171,8 @@ full, from `packs/rainmeter/pack.json`:
   "spec": 2,
   "id": "rainmeter",
   "name": "Rainmeter",
-  "version": "1.4.0",
+  "version": "1.5.0",
+  "min_engine": "1.0.0",
   "order": 30,
   "targets": { "process": ["Rainmeter.exe"] },
   "settings": [
@@ -206,6 +216,9 @@ Line by line:
   without one.
 - **`"id"`, `"name"`, `"version"`** — the identity. The id is the folder name and the key the
   daemon stores the user's choice under; the version is what the catalogue compares.
+- **`"min_engine": "1.0.0"`** — the daemon this pack needs. A daemon that is too old refuses the
+  pack by name and never installs it, and the catalogue does not offer the pack to such a daemon
+  at all.
 - **`"order": 30`** — packs apply in ascending order and revert in descending order, so
   Wallpaper Engine (10) applies before G-Helper (20) before Rainmeter (30).
 - **`"targets": { "process": ["Rainmeter.exe"] }`** — the pack reacts to `Rainmeter.exe`. The
@@ -253,11 +266,12 @@ choosing between the 64-bit and the 32-bit binary.
     {
       "id": "rainmeter",
       "name": "Rainmeter",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "description": "…one line, shown in the catalogue window…",
       "file": "packs/rainmeter/pack.json",
-      "sha256": "6477d976f9ff95fcbb939cf73845de32e4ab38c12edf89f25163e92c4f668b60",
-      "size": 1317,
+      "sha256": "579fd1aeac384a832f29f2162f4af2ad0cb24931239c1926a787a39af8f4dc6b",
+      "size": 1342,
+      "min_engine": "1.0.0",
       "updated": "2026-10-20"
     }
   ]
@@ -275,6 +289,7 @@ choosing between the 64-bit and the 32-bit binary.
 | `packs[].file` | The path of the pack file, relative to the **repository root** — not to the manifest's own folder. |
 | `packs[].sha256` | The SHA-256 of the exact published bytes, in lowercase hex. |
 | `packs[].size` | The size of the published file in bytes. |
+| `packs[].min_engine` | The daemon version the pack needs. A daemon that is too old does not get the pack offered at all. |
 | `packs[].updated` | The date this pack was last changed. Informational. |
 
 The daemon downloads the file, checks the **size** first and then the **SHA-256**, and refuses
@@ -286,7 +301,8 @@ Every change to a pack updates, in the same commit:
 
 - the pack file under `packs/<id>/pack.json`, with its `version` bumped — patch for a fix, minor
   for new dropdown values or steps, major for a schema change;
-- its `version`, `sha256`, `size` and `updated` in `catalog/index.json`;
+- its `version`, `sha256`, `size` and `updated` in `catalog/index.json`, plus its `min_engine`
+  when the pack declares one — a manifest without it would offer a pack the daemon then refuses;
 - the top-level `updated` in `catalog/index.json`;
 - the changelog below.
 
@@ -322,17 +338,9 @@ cannot verify, and the error says exactly this.
 The **repository itself is never stale** — the commit is there at once; only the CDN's view of
 `main` lags. A commit-pinned URL is correct immediately:
 
-```
+```text
 https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/<commit-sha>/catalog/index.json
 ```
-
-## The packs in this repo
-
-| Pack | Version | What it does |
-|---|---|---|
-| `wallpaper-engine` | 1.4.0 | Stops, pauses or kills the animated wallpaper while a tracked app runs, and plays it again afterwards. Two dropdowns: the action, and which binary to call (auto, 64-bit, 32-bit). |
-| `g-helper` | 1.3.1 | Switches G-Helper's performance mode (Turbo / Balanced / Silent) through G-Helper's own hotkeys while a tracked app runs, and restores the captured mode afterwards. |
-| `rainmeter` | 1.4.0 | Loads another Rainmeter layout while a tracked app runs and reloads the `@Backup` snapshot afterwards. A spec 2 pack: the bang and the window class are pack data, and the pack sends them itself. |
 
 ## Changelog
 
@@ -341,6 +349,7 @@ https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/<commit-sha>/cat
 | 2026-10-18 | Initial catalogue: `wallpaper-engine` 1.4.0, `g-helper` 1.3.1, `rainmeter` 1.3.0. |
 | 2026-10-18 | The daemon's catalogue client landed: `--catalog-list` and `--catalog-install <id>` fetch this manifest, verify each file's sha256/size and install it (verified live against this repo). No pack content changed. |
 | 2026-10-20 | `rainmeter` 1.4.0 (spec 2): the pack sends Rainmeter's own bang over `WM_COPYDATA`; the daemon no longer knows Rainmeter's protocol. |
+| 2026-10-20 | `rainmeter` 1.5.0: the pack declares `min_engine` 1.0.0, the daemon it needs. The bytes changed, so the hash and the size moved with the version. |
 | 2026-10-20 | The README now documents the pack format, the mechanism vocabulary and the publishing rules. The licence holder is the author. |
 
 ## Licence
@@ -358,6 +367,8 @@ The packs drive third-party software, which is **not** part of this project:
 - [Wallpaper Engine](https://www.wallpaperengine.io) — the wallpaper is controlled through its
   own `-control stop|pause|play` command line.
 
-The daemon that reads these packs is [ArmouryDaemon](https://github.com/PixelAsh6/ArmouryDaemon);
-the pack format, the mechanism vocabulary and the script host API are documented there, in
-`crates/armoury-core/src/pack.rs`, `PACK-SPEC-PROPOSAL.md` and `SPEC3-SCRIPTING.md`.
+The daemon that reads these packs is [ArmouryDaemon](https://github.com/PixelAsh6/ArmouryDaemon).
+The pack format, the mechanism vocabulary and the script host API are documented there: the
+schema, the allowed mechanisms and the allowed captures live in the daemon's own source,
+`crates/armoury-core/src/pack.rs`; the script host in its `README.md`; and the host calls a spec-2
+pack may make in `deploy/README.md`.

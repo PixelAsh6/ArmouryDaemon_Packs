@@ -15,6 +15,8 @@ ones it downloads, and interprets it — a pack never runs anything by itself.
 ```text
 catalog/index.json          the manifest the daemon reads
 packs/<id>/pack.json        the packs themselves (one JSON file each)
+README.md                   this file
+.gitattributes              keeps the JSON files LF, so the hashes stay honest
 LICENSE                     MIT
 ```
 
@@ -63,7 +65,7 @@ in the daemon repository), and a pack that does not validate is refused at insta
       "key": "layout",             // unique within the pack
       "label": "Layout while a tracked app runs",
       "type": "enum",              // "enum" is the only type
-      "values": ["Empty", "Default", "kill"],
+      "values": ["Empty", "Default", "illustro default", "kill"],
       "default": "Empty"           // must be one of the values
     }
   ],
@@ -256,7 +258,10 @@ choosing between the 64-bit and the 32-bit binary.
 
 ## The catalogue format
 
-`catalog/index.json` is the manifest the daemon fetches:
+`catalog/index.json` is the manifest the daemon fetches. By default it reads the raw file on
+GitHub: `https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/main/catalog/index.json`.
+That is a plain fetch of a public file, so listing and installing a pack needs no API key — the
+daemon's SteamGridDB key is for cover art only.
 
 ```json
 {

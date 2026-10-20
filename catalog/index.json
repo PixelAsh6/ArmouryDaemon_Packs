@@ -25,11 +25,12 @@
     {
       "id": "rainmeter",
       "name": "Rainmeter",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "description": "Switch to another layout when a tracked app is running, revert when no tracked app is running.",
       "file": "packs/rainmeter/pack.json",
-      "sha256": "6477d976f9ff95fcbb939cf73845de32e4ab38c12edf89f25163e92c4f668b60",
-      "size": 1317,
+      "sha256": "579fd1aeac384a832f29f2162f4af2ad0cb24931239c1926a787a39af8f4dc6b",
+      "size": 1342,
+      "min_engine": "1.0.0",
       "updated": "2026-10-20"
     }
   ]

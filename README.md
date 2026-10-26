@@ -372,13 +372,14 @@ daemon's SteamGridDB key is for cover art only.
 
 ```json
 {
-  "schema": 1,
-  "updated": "2026-10-20",
-  "packs": [
+  "schema": 2,
+  "updated": "2026-10-26",
+  "modules": [
     {
       "id": "rainmeter",
       "name": "Rainmeter",
       "version": "1.5.0",
+      "kind": "pack",
       "description": "…one line, shown in the catalogue window…",
       "file": "packs/rainmeter/pack.json",
       "sha256": "579fd1aeac384a832f29f2162f4af2ad0cb24931239c1926a787a39af8f4dc6b",
@@ -392,17 +393,18 @@ daemon's SteamGridDB key is for cover art only.
 
 | Field | Meaning |
 |---|---|
-| `schema` | The manifest schema. The daemon understands `1` and refuses anything else. |
+| `schema` | The manifest schema. `2` names the entries under `modules`; the daemon also accepts `1` and its old `packs` key **for one release window** (the manifest carries either key, never both). `0` and anything above `2` are refused. |
 | `updated` | The date the manifest was last changed. |
-| `packs[].id` | The pack id. The daemon matches it against the installed packs. |
-| `packs[].name` | The display name. |
-| `packs[].version` | The version. A higher version than the installed one is an update. |
-| `packs[].min_engine` | The smallest daemon that may install this pack; a daemon older than that is not offered the pack at all. No value means every daemon. |
-| `packs[].description` | One line for the catalogue window. |
-| `packs[].file` | The path of the pack file, relative to the **repository root** — not to the manifest's own folder. |
-| `packs[].sha256` | The SHA-256 of the exact published bytes, in lowercase hex. |
-| `packs[].size` | The size of the published file in bytes. |
-| `packs[].updated` | The date this pack was last changed. Informational. |
+| `modules[].id` | The pack id. The daemon matches it against the installed packs. |
+| `modules[].name` | The display name. |
+| `modules[].version` | The version. A higher version than the installed one is an update. |
+| `modules[].kind` | What the pack is: `"pack"` or `"mode"`, the same name the pack file's own `kind` writes. Absent means `"pack"`. |
+| `modules[].min_engine` | The smallest daemon that may install this pack; a daemon older than that is not offered the pack at all. No value means every daemon. |
+| `modules[].description` | One line for the catalogue window. |
+| `modules[].file` | The path of the pack file, relative to the **repository root** — not to the manifest's own folder. |
+| `modules[].sha256` | The SHA-256 of the exact published bytes, in lowercase hex. |
+| `modules[].size` | The size of the published file in bytes. |
+| `modules[].updated` | The date this pack was last changed. Informational. |
 
 The daemon downloads the file, checks the **size** first and then the **SHA-256**, and refuses
 anything that does not match — with an error that says what did not happen and why it happened.
@@ -414,7 +416,8 @@ Every change to a pack updates, in the same commit:
 - the pack file under `packs/<id>/pack.json`, with its `version` bumped — patch for a fix, minor
   for new dropdown values or steps, major for a schema change;
 - its `version`, `sha256`, `size` and `updated` in `catalog/index.json`, plus its `min_engine`
-  when the pack declares one — a manifest without it would offer a pack the daemon then refuses;
+  when the pack declares one — a manifest without it would offer a pack the daemon then refuses —
+  and its `kind` when it is a mode; the manifest's `kind` mirrors the pack file's own;
 - the top-level `updated` in `catalog/index.json`;
 - the changelog below.
 
@@ -465,6 +468,7 @@ https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/<commit-sha>/cat
 | 2026-10-20 | The README now documents the pack format, the mechanism vocabulary and the publishing rules. The licence holder is the author. |
 | 2026-10-24 | The README documents `capabilities` (1.1.5), `kind` and `triggers` (1.1.6) and `min_engine`, and lists the host functions of all thirteen capabilities. The Rainmeter example and its manifest entry now match the published 1.5.0 pack. |
 | 2026-10-26 | The `kind` section's worker sentence is qualified: the separate mode worker is newer than 1.1.6, and on 1.1.6 a mode still runs on the pack worker. No pack content changed. |
+| 2026-10-26 | The manifest reaches schema 2: the entries move under `modules` and each names its `kind` (`"pack"` here). No pack file changed, so no hash or size moved. Not pushed while the installed daemon is 1.1.6 — that one refuses schema 2 — the flip waits for the next daemon release. |
 
 ## Licence
 

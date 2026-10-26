@@ -409,6 +409,28 @@ daemon's SteamGridDB key is for cover art only.
 The daemon downloads the file, checks the **size** first and then the **SHA-256**, and refuses
 anything that does not match — with an error that says what did not happen and why it happened.
 
+## Signing the manifest
+
+The manifest travels minisign-signed. The daemon fetches `catalog/index.json.minisig` next to
+`index.json` and verifies the signature against the keyring compiled into its executable
+**before** it parses anything — an unsigned or badly signed manifest is refused as a whole,
+whatever its entries say.
+
+- The **signing key** lives outside the repository, with the keeper
+  (`~\.minisign\ArmouryDaemonCatalog.key`); the matching public key is in the daemon's
+  `crates/armoury/src/trust/keys.json`. Nothing in this repository signs anything.
+- Sign a manifest edit with `pwsh tools/sign-manifest.ps1` (the tool itself:
+  `winget install jedisct1.minisign`). It signs `catalog/index.json`, then verifies the fresh
+  signature against the matching public key, so a wrong-bytes signature is caught now, not at
+  the CDN.
+- **Commit `index.json` and `index.json.minisig` in the same commit.** The daemon fetches both
+  files at one revision of `main`, and raw.githubusercontent.com freezes that revision for a
+  few minutes (see below) — a manifest from one revision with a signature from another is a
+  refusal the daemon will honestly report, but not something to ship.
+- **Rotation.** The keyring carries two keys at a time with a 90-day overlap: a new public
+  key joins the daemon's ring first, and the old one drops only later, so a manifest signed
+  by either is accepted during the window.
+
 ## Publishing a pack
 
 Every change to a pack updates, in the same commit:
@@ -469,6 +491,7 @@ https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/<commit-sha>/cat
 | 2026-10-24 | The README documents `capabilities` (1.1.5), `kind` and `triggers` (1.1.6) and `min_engine`, and lists the host functions of all thirteen capabilities. The Rainmeter example and its manifest entry now match the published 1.5.0 pack. |
 | 2026-10-26 | The `kind` section's worker sentence is qualified: the separate mode worker is newer than 1.1.6, and on 1.1.6 a mode still runs on the pack worker. No pack content changed. |
 | 2026-10-26 | The manifest reaches schema 2: the entries move under `modules` and each names its `kind` (`"pack"` here). No pack file changed, so no hash or size moved. Not pushed while the installed daemon is 1.1.6 — that one refuses schema 2 — the flip waits for the next daemon release. |
+| 2026-10-26 | The signing story, prepared: `tools/sign-manifest.ps1` signs the manifest with the keeper's key (kept outside the repository), and the daemon verifies `index.json.minisig` against its baked keyring before parsing. The `.minisig` file itself is created at the flip, in the same commit as the schema-2 manifest. |
 
 ## Licence
 

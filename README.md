@@ -57,7 +57,9 @@ in the daemon repository), and a pack that does not validate is refused at insta
   "id": "rainmeter",               // unique, non-empty
   "name": "Rainmeter",             // shown in the UI
   "version": "1.5.0",              // shown in the UI, compared against the catalogue
-  "min_engine": "1.0.0",           // the daemon this pack needs (optional)
+  "min_engine": "1.0.0",           // the oldest daemon that may run it (default: no minimum)
+  "kind": "pack",                  // "pack" (default) or "mode"
+  "triggers": [ { "kind": "tracked_app" } ],  // what starts it (default shown)
   "order": 30,                     // packs apply ascending, revert descending (default 100)
   "targets": { "process": ["Rainmeter.exe"] },   // exe file names, matched case-insensitively
   "settings": [                    // at most 4 dropdowns
@@ -73,6 +75,7 @@ in the daemon repository), and a pack that does not validate is refused at insta
     { "key": "was_running", "mechanism": "process_running" },
     { "key": "target_path", "mechanism": "target_path" }
   ],
+  "capabilities": ["context", "ipc", "process", "time"],  // what it may call (default: everything)
   "script": {                      // spec 2 only
     "apply":  "…Rhai source…",
     "revert": "…Rhai source…"
@@ -81,6 +84,39 @@ in the daemon repository), and a pack that does not validate is refused at insta
   "revert": { "guard": { … }, "steps": [ … ] }
 }
 ```
+
+**`kind`** says what the pack is. `"pack"` (the default) applies while a tracked app runs.
+`"mode"` marks a global on/off pack with a trigger of its own. A mode's work runs on its own
+worker thread, separate from the packs, so a slow mode cannot delay a pack. That is newer than
+1.1.6: there, a mode still runs on the pack worker. Anything else is refused when the pack is
+parsed: `unknown kind 'widget' (expected 'pack' or 'mode')`.
+
+**`triggers`** says what starts the pack. The default is the tracked app, and `hotkey` is the
+other kind:
+
+```json
+"triggers": [ { "kind": "hotkey", "key": "end" } ]
+```
+
+A `hotkey` trigger needs a key; a `tracked_app` trigger takes none. Either mistake is refused
+when the pack is parsed. The key is resolved by the daemon's own hotkey table, not by the schema,
+so a name the daemon does not know is a trigger that never fires. A mode with an explicitly empty
+list is refused, because nothing would ever start it. An absent list is not empty: it defaults to
+the tracked app.
+
+In 1.1.6 nothing dispatches a trigger yet: a pack still applies and reverts on the tracked app,
+mode or not, and a hotkey trigger does not fire.
+
+**`min_engine`** is the oldest daemon that may run the pack, for a pack that needs a host function
+an older one does not have. No value means every daemon. A pack that asks for a newer daemon is
+refused at install, with the version it needs and the version of the daemon that refused it.
+
+**`capabilities`** is what the pack may call. It gates the steps and the script alike, and
+omitting it grants everything, which is what keeps the shipped packs working. The section
+"What a pack may do", below, lists the names and what each one opens.
+
+`capabilities` arrived in 1.1.5; `kind` and `triggers` in 1.1.6. All three are additive: a pack
+that omits them loads and behaves exactly as it did before they existed.
 
 **Guards** decide whether a block runs at all:
 
@@ -121,9 +157,65 @@ A `when` clause is a plain equality test on a dropdown value or a captured value
 An unknown placeholder is left untouched and reported, so a typo never turns into a silent empty
 string.
 
+## What a pack may do
+
+A pack declares the capabilities it needs. They gate the steps and the script alike. A script call
+to a function of a capability the pack was not granted fails as an **unknown function**, because
+the function is not on that pack's engine at all. A step whose mechanism needs a capability the
+pack was not granted is refused when the pack is validated, so the pack never installs.
+
+**Omitting `capabilities` grants every capability.** That is the default, and it is why the three
+shipped packs, written before the field existed, still work. `"capabilities": []` is the other end
+of the range: a pack that asks for nothing, not even `context`.
+
+| Capability | What it opens | Host functions |
+|---|---|---|
+| `context` | The app the pack drives, and the pack's own settings and captures. | `target_name`, `target_exe`, `target_dir`, `setting`, `captured` |
+| `journal` | The pack's own log and captures. | `log`, `capture` |
+| `files` | Reading a file anywhere. | `read_file`, `read_json`, `read_ini` |
+| `files-write` | Writing a file inside the four file roots. | `write_file` |
+| `registry` | Writing a value under HKCU or HKLM, outside the four file roots. | none; the `registry_set` step only |
+| `process` | Looking at, killing and starting processes. | `process_running`, `process_kill`, `process_start` |
+| `exec` | Running a program. | `run_cli` |
+| `input` | Sending keystrokes. | `hotkey` |
+| `ipc` | Sending a message to another app's window. | `window_message` |
+| `windows` | Hiding and showing other apps' windows. | `windows_of`, `window_hide`, `window_show` |
+| `audio` | Muting and unmuting audio. | `audio_sessions`, `audio_mute`, `audio_mute_all` |
+| `overlay` | Asking the daemon for the idle overlay. | `overlay_show`, `overlay_hide` |
+| `time` | Waiting. | `sleep` |
+
+A name the daemon does not know is refused when the pack is parsed:
+`unknown capability 'teleport'`.
+
+A step is gated by the same table: `cli` needs `exec`, `process_start` and `process_kill` need
+`process`, `hotkey` needs `input`, and `registry_set` needs `registry`. A pack that asks for
+`files` and carries a `cli` step is refused when it is validated, with the reason in the message:
+
+```
+apply step 0: 'cli' needs the 'exec' capability, which this pack was not granted (the pack asked for: files)
+```
+
+A denied script call fails as an unknown function, and the log names the missing capability in the
+same sentence.
+
+- `exec` runs a program and waits for it (`run_cli`); `process` is how a pack looks at, kills or
+  starts one. Starting an app with a `process_start` step asks for `process`, not `exec`.
+- `files-write` stops at `%APPDATA%`, `%LOCALAPPDATA%`, `%PROGRAMDATA%` and the target's folder.
+  `registry` is the capability that reaches past them: it writes under HKCU or HKLM, which is
+  where Windows looks a start-up entry up.
+- `overlay_show` and `overlay_hide` ask the daemon to enter or leave idle mode. The overlay
+  windows belong to the daemon's main loop, so a pack requests the overlay instead of painting
+  one.
+- `time` covers the script's `sleep`. A step's `sleep_ms` needs no capability.
+
+The list is the grant: 1.1.6 has no separate permission window, so a pack that declares
+`["exec"]` can run programs and nothing else. A pack that declares `[]` gets an engine with no
+host function on it at all.
+
 ## The mechanism vocabulary
 
-A pack can only use what the daemon implements. Anything else is rejected at install time.
+A pack can only use what the daemon implements, and only with the capability it was granted.
+Anything else is rejected at install time.
 
 **Step mechanisms** (`cli`, `hotkey`, `process_kill`, `process_start`, `registry_set`):
 
@@ -145,18 +237,27 @@ A pack can only use what the daemon implements. Anything else is rejected at ins
 
 **The script host API** (spec 2). A spec-2 pack's `script.apply` and `script.revert` are Rhai
 source. The daemon compiles and runs them in a sandboxed interpreter with a whitelisted host API
-and nothing else — no `eval`, no imports, no ambient file or process access:
+and nothing else — no `eval`, no imports, no ambient file or process access. The whitelist is the
+capabilities the pack was granted: a function of a capability it did not ask for is not on the
+engine at all.
 
 `ctx.target_name()` · `ctx.target_exe()` · `ctx.target_dir()` · `ctx.setting(key)` ·
 `ctx.captured(key)` · `ctx.capture(key, value)` · `ctx.log(msg)` · `ctx.run_cli(exe, args)` ·
 `ctx.hotkey(chord)` · `ctx.window_message(class, title, payload)` · `ctx.sleep(ms)` ·
 `ctx.process_running(name)` · `ctx.process_kill(name)` · `ctx.process_start(path)` ·
 `ctx.read_file(path)` · `ctx.write_file(path, text)` · `ctx.read_json(path, pointer)` ·
-`ctx.read_ini(path, section, key)`
+`ctx.read_ini(path, section, key)` · `ctx.windows_of(pid)` · `ctx.window_hide(hwnd)` ·
+`ctx.window_show(hwnd)` · `ctx.audio_sessions()` · `ctx.audio_mute(pid, muted)` ·
+`ctx.audio_mute_all(muted)` · `ctx.overlay_show()` · `ctx.overlay_hide()`
 
 `ctx.window_message` is the generic one: it finds a window of another application by class and/or
 title (an empty field matches any) and sends it the payload as a `WM_COPYDATA` message, with a
 2 s timeout so a hung application cannot block the daemon.
+
+`ctx.audio_mute` returns the previous state of every session of the process, so a revert can put
+it back, and an unmute leaves a session the user had muted alone. `ctx.overlay_show` and
+`ctx.overlay_hide` ask the daemon to enter or leave idle mode: the overlay windows belong to the
+daemon's main loop, so the pack is not painting anything itself.
 
 Every script gets a hard budget — 500 000 operations, a 64 KiB string limit, no modules and a
 10 s wall clock — and every host call is written to the pack's log. Writes and program launches
@@ -218,9 +319,9 @@ Line by line:
   without one.
 - **`"id"`, `"name"`, `"version"`** — the identity. The id is the folder name and the key the
   daemon stores the user's choice under; the version is what the catalogue compares.
-- **`"min_engine": "1.0.0"`** — the daemon this pack needs. A daemon that is too old refuses the
-  pack by name and never installs it, and the catalogue does not offer the pack to such a daemon
-  at all.
+- **`"min_engine": "1.0.0"`** — the oldest daemon that may run it. This pack needs nothing newer
+  than 1.0.0; a pack that uses a host function an older daemon lacks names a later version, and
+  the install is refused instead of failing at apply.
 - **`"order": 30`** — packs apply in ascending order and revert in descending order, so
   Wallpaper Engine (10) applies before G-Helper (20) before Rainmeter (30).
 - **`"targets": { "process": ["Rainmeter.exe"] }`** — the pack reacts to `Rainmeter.exe`. The
@@ -246,6 +347,12 @@ Line by line:
 - **`"revert"`** — the guard `targetRunning: false, capturedRunning: true` is the one every
   revert needs: the block runs after the target has gone, but only if it had been running when
   the pack applied. The step starts Rainmeter again, again only for the `kill` option.
+- **No `kind`, no `triggers`, no `capabilities`** — the three fields are absent, so the defaults
+  apply: this is a pack, it follows the tracked app, and it is granted every capability. Its
+  script calls `setting` and `window_message`, and its steps use `process_kill` and
+  `process_start`, so `["context", "ipc", "process", "time"]` is what it would declare if it
+  declared anything. Declaring nothing is what lets this pack, and the other two, run unchanged
+  on a daemon that has the field.
 
 Two things are worth spelling out. First, **a block's steps run first, then its script** — that
 is what makes the 3 s wait in the revert correct, because Rainmeter is already running again when
@@ -290,11 +397,11 @@ daemon's SteamGridDB key is for cover art only.
 | `packs[].id` | The pack id. The daemon matches it against the installed packs. |
 | `packs[].name` | The display name. |
 | `packs[].version` | The version. A higher version than the installed one is an update. |
+| `packs[].min_engine` | The smallest daemon that may install this pack; a daemon older than that is not offered the pack at all. No value means every daemon. |
 | `packs[].description` | One line for the catalogue window. |
 | `packs[].file` | The path of the pack file, relative to the **repository root** — not to the manifest's own folder. |
 | `packs[].sha256` | The SHA-256 of the exact published bytes, in lowercase hex. |
 | `packs[].size` | The size of the published file in bytes. |
-| `packs[].min_engine` | The daemon version the pack needs. A daemon that is too old does not get the pack offered at all. |
 | `packs[].updated` | The date this pack was last changed. Informational. |
 
 The daemon downloads the file, checks the **size** first and then the **SHA-256**, and refuses
@@ -356,6 +463,8 @@ https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/<commit-sha>/cat
 | 2026-10-20 | `rainmeter` 1.4.0 (spec 2): the pack sends Rainmeter's own bang over `WM_COPYDATA`; the daemon no longer knows Rainmeter's protocol. |
 | 2026-10-20 | `rainmeter` 1.5.0: the pack declares `min_engine` 1.0.0, the daemon it needs. The bytes changed, so the hash and the size moved with the version. |
 | 2026-10-20 | The README now documents the pack format, the mechanism vocabulary and the publishing rules. The licence holder is the author. |
+| 2026-10-24 | The README documents `capabilities` (1.1.5), `kind` and `triggers` (1.1.6) and `min_engine`, and lists the host functions of all thirteen capabilities. The Rainmeter example and its manifest entry now match the published 1.5.0 pack. |
+| 2026-10-26 | The `kind` section's worker sentence is qualified: the separate mode worker is newer than 1.1.6, and on 1.1.6 a mode still runs on the pack worker. No pack content changed. |
 
 ## Licence
 

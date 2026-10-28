@@ -1,7 +1,41 @@
 {
   "schema": 2,
-  "updated": "2026-10-26",
+  "updated": "2026-10-28",
   "modules": [
+    {
+      "id": "console",
+      "name": "Console launcher",
+      "version": "1.3.0",
+      "kind": "helper",
+      "description": "The pad-driven cover-art launcher: a separate module the daemon starts, not part of the daemon.",
+      "file": "modules/console/console.zip",
+      "entry": "ArmouryConsole.exe",
+      "sha256": "c60a112ac73961049662d4b3463a9d5706999f49e77f19f2d9b9f1d26cab572a",
+      "size": 7151662,
+      "updated": "2026-10-28"
+    },
+    {
+      "id": "idle",
+      "name": "Idle mode",
+      "version": "1.0.0",
+      "kind": "mode",
+      "description": "Turns the screens black and mutes every output device, and comes back on the next key press.",
+      "file": "packs/idle/pack.json",
+      "sha256": "3f0a572d06f13ec077bf4d0f517f08752bf45c100ff5a038d0d49524cd4c1f0d",
+      "size": 471,
+      "updated": "2026-10-28"
+    },
+    {
+      "id": "killswitch",
+      "name": "Killswitch",
+      "version": "1.0.0",
+      "kind": "mode",
+      "description": "Hides and mutes every running tracked app, and puts it all back when released.",
+      "file": "packs/killswitch/pack.json",
+      "sha256": "9cef7e2914d1ce4ac96a58c6eb292f07c7cab853f555997f6eda32c734aaa16f",
+      "size": 485,
+      "updated": "2026-10-28"
+    },
     {
       "id": "wallpaper-engine",
       "name": "Wallpaper Engine",

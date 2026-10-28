@@ -10,8 +10,8 @@
       "description": "The pad-driven cover-art launcher: a separate module the daemon starts, not part of the daemon.",
       "file": "modules/console/console.zip",
       "entry": "ArmouryConsole.exe",
-      "sha256": "c60a112ac73961049662d4b3463a9d5706999f49e77f19f2d9b9f1d26cab572a",
-      "size": 7151662,
+      "sha256": "49254d1b1277f60797326f00a5c4fc4c7fd8933ba60c49dceadbdef4922a8367",
+      "size": 7151570,
       "updated": "2026-10-28"
     },
     {
@@ -21,8 +21,8 @@
       "kind": "mode",
       "description": "Turns the screens black and mutes every output device, and comes back on the next key press.",
       "file": "packs/idle/pack.json",
-      "sha256": "13f0b1f4c07f0001ab3308348adc9e483f7e868359d250f24804fde98273d6da",
-      "size": 628,
+      "sha256": "898320a8484a52329170a2486be66909ae902cdbf93fc3b437ebbb2aa70ba3de",
+      "size": 587,
       "updated": "2026-10-28"
     },
     {
@@ -32,8 +32,8 @@
       "kind": "mode",
       "description": "Hides and mutes every running tracked app, and puts it all back when released.",
       "file": "packs/killswitch/pack.json",
-      "sha256": "f7ef36eba2c63f1fa5a50bb7175a177a54495d39e3cda26cbab5a3b7305cd030",
-      "size": 642,
+      "sha256": "c7f998d5a7d93668598c9e0c5d72256332c232efc1b66bb77f52d06918f27191",
+      "size": 601,
       "updated": "2026-10-28"
     },
     {

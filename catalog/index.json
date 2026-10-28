@@ -21,8 +21,8 @@
       "kind": "mode",
       "description": "Turns the screens black and mutes every output device, and comes back on the next key press.",
       "file": "packs/idle/pack.json",
-      "sha256": "3f0a572d06f13ec077bf4d0f517f08752bf45c100ff5a038d0d49524cd4c1f0d",
-      "size": 471,
+      "sha256": "13f0b1f4c07f0001ab3308348adc9e483f7e868359d250f24804fde98273d6da",
+      "size": 628,
       "updated": "2026-10-28"
     },
     {
@@ -32,8 +32,8 @@
       "kind": "mode",
       "description": "Hides and mutes every running tracked app, and puts it all back when released.",
       "file": "packs/killswitch/pack.json",
-      "sha256": "9cef7e2914d1ce4ac96a58c6eb292f07c7cab853f555997f6eda32c734aaa16f",
-      "size": 485,
+      "sha256": "f7ef36eba2c63f1fa5a50bb7175a177a54495d39e3cda26cbab5a3b7305cd030",
+      "size": 642,
       "updated": "2026-10-28"
     },
     {

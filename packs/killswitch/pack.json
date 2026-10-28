@@ -3,9 +3,17 @@
   "id": "killswitch",
   "name": "Killswitch",
   "version": "1.0.0",
+  "kind": "mode",
   "order": 11,
-  "targets": { "process": [] },
-  "triggers": [{ "kind": "hotkey", "key": "end" }],
+  "targets": {
+    "process": []
+  },
+  "triggers": [
+    {
+      "kind": "hotkey",
+      "key": "end"
+    }
+  ],
   "settings": [
     {
       "key": "hotkey",
@@ -15,9 +23,19 @@
     }
   ],
   "apply": {
-    "steps": [{ "mechanism": "daemon", "action": "killswitch_on" }]
+    "steps": [
+      {
+        "mechanism": "daemon",
+        "action": "killswitch_on"
+      }
+    ]
   },
   "revert": {
-    "steps": [{ "mechanism": "daemon", "action": "killswitch_off" }]
+    "steps": [
+      {
+        "mechanism": "daemon",
+        "action": "killswitch_off"
+      }
+    ]
   }
 }

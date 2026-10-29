@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-10-28",
+  "updated": "2026-10-29",
   "modules": [
     {
       "id": "console",
@@ -10,9 +10,9 @@
       "description": "The pad-driven cover-art launcher: a separate module the daemon starts, not part of the daemon.",
       "file": "modules/console/console.zip",
       "entry": "ArmouryConsole.exe",
-      "sha256": "49254d1b1277f60797326f00a5c4fc4c7fd8933ba60c49dceadbdef4922a8367",
-      "size": 7151570,
-      "updated": "2026-10-28"
+      "sha256": "c60a112ac73961049662d4b3463a9d5706999f49e77f19f2d9b9f1d26cab572a",
+      "size": 7151662,
+      "updated": "2026-10-29"
     },
     {
       "id": "idle",
@@ -65,10 +65,10 @@
       "kind": "pack",
       "description": "Switch to another layout when a tracked app is running, revert when no tracked app is running.",
       "file": "packs/rainmeter/pack.json",
-      "sha256": "579fd1aeac384a832f29f2162f4af2ad0cb24931239c1926a787a39af8f4dc6b",
-      "size": 1342,
+      "sha256": "d9e537d7cfd46ef6c03c7d81e7454fbdf4915dec8db674b5d574ba232135b872",
+      "size": 1549,
       "min_engine": "1.0.0",
-      "updated": "2026-10-20"
+      "updated": "2026-10-29"
     }
   ]
 }

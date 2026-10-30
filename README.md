@@ -6,21 +6,26 @@ The official **pack catalogue** for [ArmouryDaemon](https://github.com/PixelAsh6
 a resident Windows daemon that switches the rest of your machine around the apps you track, then
 puts everything back.
 
-This repository holds **data only**: one `pack.json` per pack, plus the manifest the daemon
-fetches. Nothing here is executable. The daemon validates every pack, verifies the hash of the
-ones it downloads, and interprets it — a pack never runs anything by itself.
+This repository holds the **packs**, which are data, and the **modules**, which are components
+of the daemon. A pack is one `pack.json` the daemon validates, verifies and interprets, so a
+pack never runs anything by itself. A module is a record plus an archive: the daemon installs it
+under `modules\<id>\` and runs only what you asked for, which today is the console launcher's
+own executable.
 
 ## What is in here
 
 ```text
 catalog/index.json          the manifest the daemon reads
+catalog/index.json.minisig  its signature, verified against the daemon's baked key
 packs/<id>/pack.json        the packs themselves (one JSON file each)
+modules/<id>/               a module's archive, its hash and its record
+tools/sign-manifest.ps1     signs the manifest with the keeper's private key
 README.md                   this file
 .gitattributes              keeps the JSON files LF, so the hashes stay honest
 LICENSE                     MIT
 ```
 
-## The packs in this repo
+## The packs and modules in this repo
 
 | Pack | Version | What it does |
 |---|---|---|
@@ -28,12 +33,19 @@ LICENSE                     MIT
 | `g-helper` | 1.3.1 | Switches G-Helper's performance mode (Turbo / Balanced / Silent) through G-Helper's own hotkeys while a tracked app runs, and restores the captured mode afterwards. |
 | `rainmeter` | 1.5.0 | Loads another Rainmeter layout while a tracked app runs and reloads the `@Backup` snapshot afterwards. A spec 2 pack: the bang and the window class are pack data, and the pack sends them itself. |
 
+| Module | Version | Kind | What it does |
+|---|---|---|---|
+| `console` | 1.3.0 | `helper` | The console launcher: the band along the bottom of the screen with the cover art of your tracked and pinned games. Installed as `modules\console\ArmouryConsole.exe`. |
+| `idle` | 1.0.0 | `mode` | Blacks out every screen and mutes all audio, and comes back on a keypress. Owns **Home** by default, recorded in its own window. |
+| `killswitch` | 1.0.0 | `mode` | Hides and mutes the running tracked apps, and puts back only what it changed. Owns **End** by default. |
+
 ## Installing a pack
 
 From the daemon's Settings window: **Install packs** opens the catalogue window, **Check for
 updates** fetches the manifest, and **Download** pulls the pack down, checks it against the
 manifest and hands it to the daemon, which validates it and installs it into its own `packs`
-folder.
+folder. A module takes the same path and lands in `modules\<id>\` instead: its record is what
+the daemon scans, and its executable is the only thing that ever runs.
 
 From the command line:
 
@@ -86,10 +98,10 @@ in the daemon repository), and a pack that does not validate is refused at insta
 ```
 
 **`kind`** says what the pack is. `"pack"` (the default) applies while a tracked app runs.
-`"mode"` marks a global on/off pack with a trigger of its own. A mode's work runs on its own
-worker thread, separate from the packs, so a slow mode cannot delay a pack. That is newer than
-1.1.6: there, a mode still runs on the pack worker. Anything else is refused when the pack is
-parsed: `unknown kind 'widget' (expected 'pack' or 'mode')`.
+`"mode"` marks a global on/off pack with a trigger of its own. Since 1.3.0 a mode's work runs on
+its own worker thread, separate from the packs, so a slow mode cannot delay a pack; 1.1.6 still
+ran it on the pack worker. Anything else is refused when the pack is parsed: `unknown kind
+'widget' (expected 'pack' or 'mode')`.
 
 **`triggers`** says what starts the pack. The default is the tracked app, and `hotkey` is the
 other kind:
@@ -104,8 +116,10 @@ so a name the daemon does not know is a trigger that never fires. A mode with an
 list is refused, because nothing would ever start it. An absent list is not empty: it defaults to
 the tracked app.
 
-In 1.1.6 nothing dispatches a trigger yet: a pack still applies and reverts on the tracked app,
-mode or not, and a hotkey trigger does not fire.
+The daemon dispatches triggers from 1.3.0 on: `tracked_app` follows the watcher and `hotkey`
+fires on its combination. The `idle` and `killswitch` modules are the shipped examples of a
+hotkey mode; in 1.1.6 nothing dispatched a trigger and a mode applied on the tracked app like
+any other pack.
 
 **`min_engine`** is the oldest daemon that may run the pack, for a pack that needs a host function
 an older one does not have. No value means every daemon. A pack that asks for a newer daemon is
@@ -492,6 +506,8 @@ https://raw.githubusercontent.com/PixelAsh6/ArmouryDaemon_Packs/<commit-sha>/cat
 | 2026-10-26 | The `kind` section's worker sentence is qualified: the separate mode worker is newer than 1.1.6, and on 1.1.6 a mode still runs on the pack worker. No pack content changed. |
 | 2026-10-26 | The manifest reaches schema 2: the entries move under `modules` and each names its `kind` (`"pack"` here). No pack file changed, so no hash or size moved. Not pushed while the installed daemon is 1.1.6 — that one refuses schema 2 — the flip waits for the next daemon release. |
 | 2026-10-26 | The signing story, prepared: `tools/sign-manifest.ps1` signs the manifest with the keeper's key (kept outside the repository), and the daemon verifies `index.json.minisig` against its baked keyring before parsing. The `.minisig` file itself is created at the flip, in the same commit as the schema-2 manifest. |
+| 2026-10-29 | The console launcher, idle mode and the killswitch arrive as **modules**: `console` `1.3.0` as a signed `helper` archive, and `idle`/`killswitch` `1.0.0` as `mode` packs whose trigger is their own hotkey. The manifest is signed and pushed because the daemon that reads schema 2 is out. |
+| 2026-10-30 | The README describes the modules alongside the packs, the trigger dispatch that 1.3.0 added, and the separate mode worker; the install section covers a module's `modules/<id>/` folder. No pack or module bytes changed, so no hash or size moved. |
 
 ## Licence
 
